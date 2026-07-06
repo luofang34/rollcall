@@ -1,0 +1,21 @@
+[package]
+name = "rollcall-netbox"
+description = "NetBox git escrow: pull the DCIM/IPAM source of truth into a canonical committed export"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+rollcall-inventory = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+ureq = { workspace = true }
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+tempfile = { workspace = true }

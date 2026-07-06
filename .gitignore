@@ -1,0 +1,11 @@
+# Rust build artifacts (Cargo.lock IS committed — this workspace ships binaries)
+/target/
+
+# nix build output symlink
+/result
+
+# XeLaTeX intermediates — the committed deliverable is reports/*.pdf
+reports/src/
+
+__pycache__/
+.DS_Store

@@ -1,0 +1,19 @@
+# Synthetic site constants for tests. Everything cost-related derives here.
+
+[site]
+name = "Example Fleet"
+operator = "Example Operator"
+description = "Small on-prem lab: edge routing, storage, GPU compute"
+
+[power]
+tariff_usd_per_kwh = 0.15
+hours_per_month = 720            # 30-day accounting month
+
+[networks]
+lan = "192.0.2.0/24"
+fabric = "198.51.100.0/24"       # IPoIB storage + observability data path
+wan = "203.0.113.10-14/24 on edge; admin access via VPN"
+mgmt = "203.0.113.0/24"          # BMCs live here
+
+[services]
+netbox_url = "http://192.0.2.114"

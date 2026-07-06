@@ -1,0 +1,246 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper, margin=2.2cm, top=3.0cm, bottom=2.6cm]{geometry}
+\usepackage{fleet-identity}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+\renewcommand{\FleetDocType}{INFRASTRUCTURE REPORT}
+\renewcommand{\FleetDocNumber}{INF-0001}
+\fleetsectionstyle
+\fleetpagestyle
+% \titlerule needs a titlesec context; outside one (plain body, as
+% \fleetheading uses it) XeTeX hits undefined \ttl@makeline — same look,
+% plain rule:
+\renewcommand{\fleetheading}[1]{%
+  \par\vspace{1.2em}%
+  {\large\bfseries\color{primary}#1}\par
+  \vspace{0.2em}\textcolor{lightgray}{\rule{\linewidth}{1.2pt}}\par
+  \vspace{0.6em}%
+}
+
+\begin{document}
+\thispagestyle{firstpage}
+
+\vspace*{1.2em}
+{\Huge\bfseries\color{primary} Infrastructure Status Report}\\[0.4em]
+{\large\color{secondary} Example Fleet — Small on-prem lab: edge routing, storage, GPU compute}\\[0.3em]
+{\color{darkgray}\small Example Operator \quad|\quad 2026-07-01 \quad|\quad INF-0001}
+
+\vspace{0.5em}\textcolor{lightgray}{\rule{\linewidth}{1.2pt}}\vspace{1em}
+
+\fleetheading{Executive Summary}
+4 of 6 probed targets are up. Down: \textcolor{accent}{\textbf{Compute-A (GPU node)}}.
+The GPU inference node Compute-A is offline and is not registered in the
+catalog. The control plane (both Proxmox APIs and the gateway) is fully
+reachable. All-on typical draw is modeled at
+2.55\,kW $\approx$
+\$275/month at \$0.15/kWh; capex is
+seeded largely with estimates pending invoices. NetBox and hardware-level
+collectors (Redfish, PDU, LLDP, SNMP) are the main architecture gaps.
+
+
+\section{Live Status Snapshot}
+Probed from the operator workstation at \texttt{2026-07-01T23:06:47.941802-04:00} (ICMP + service HTTP).
+Fabric-svc is fabric-only (198.51.100.160) and cannot be verified from the
+LAN; its state is reported as unverifiable, not down.
+
+\begin{tabularx}{\textwidth}{X l l}
+\toprule
+\textbf{Target} & \textbf{State} & \textbf{Detail} \\
+\midrule
+Edge router & \textcolor{success}{\textbf{UP}} & icmp reply \\
+Store (Proxmox host) & \textcolor{success}{\textbf{UP}} & icmp reply \\
+Store Proxmox VE API & \textcolor{success}{\textbf{UP}} & HTTP 200 \\
+Compute-A (GPU node) & \textcolor{accent}{\textbf{DOWN}} & no icmp reply \\
+Gateway reverse proxy & \textcolor{success}{\textbf{UP}} & HTTP 301 \\
+Fabric-only service (CT160) & \textcolor{darkgray}{\textbf{UNVERIFIABLE}} & no icmp reply \\
+\bottomrule
+\end{tabularx}
+
+
+\section{Device Inventory}
+\subsection{Edge}
+\textbf{Role:} Edge router\\
+\textbf{LAN:} \texttt{192.0.2.1} \quad \textbf{Fabric:} \texttt{198.51.100.1}\\
+\textbf{Board:} Example Router R1\\
+\textbf{RAM:} 4\,GB\\
+\textbf{Source of truth:} \textcolor{accent}{\textbf{not registered in the catalog}}\\
+\textcolor{darkgray}{Firmware upgrade pending.}
+\subsection{Store}
+\textbf{Role:} Storage + platform services host (Proxmox VE)\\
+\textbf{LAN:} \texttt{192.0.2.3} \quad \textbf{Fabric:} \texttt{198.51.100.3}\\
+\textbf{Board:} ACME 2U Server\\
+\textbf{CPU:} 2x Example CPU E1 (14C/28T each)\\
+\textbf{RAM:} 128\,GB\\
+\textbf{Fabric HCA:} Example HCA H3\\
+\textbf{Disks:} Example SSD 512GB; Example HDD 2TB\\
+\textbf{Source of truth:} \textcolor{accent}{\textbf{not registered in the catalog}}\\
+\textcolor{darkgray}{Serves the storage LUN the compute node mounts.}
+\subsection{Compute-A}
+\textbf{Role:} GPU inference node\\
+\textbf{LAN:} \texttt{192.0.2.4}\\
+\textbf{CPU:} 2x Example CPU P1 (28C/56T each)\\
+\textbf{RAM:} 128\,GB\\
+\textbf{Accelerators:}\begin{itemize}[nosep,leftmargin=1.4em]\item 4$\times$ Example GPU G1 (300\,W each)
+\end{itemize}
+\textbf{Source of truth:} \textcolor{accent}{\textbf{not registered in the catalog}}\\
+\subsection{Compute-B}
+\textbf{Role:} Mixed compute node (Proxmox VE)\\
+\textbf{LAN:} \texttt{192.0.2.5} \quad \textbf{Fabric:} \texttt{198.51.100.5}\\
+\textbf{Board:} Example Board X1\\
+\textbf{CPU:} Example EPYC Z1 (64C/128T)\\
+\textbf{RAM:} 512\,GB\\
+\textbf{Fabric HCA:} Example HCA H3\\
+\textbf{Disks:} Example NVMe 2TB\\
+\textbf{Accelerators:}\begin{itemize}[nosep,leftmargin=1.4em]\item 2$\times$ Example GPU G2 (450\,W each)
+\end{itemize}
+\textbf{Source of truth:} \textcolor{accent}{\textbf{not registered in the catalog}}\\
+\subsection{Fabric-SW}
+\textbf{Role:} Fabric switch (embedded subnet manager)\\
+\textbf{Mgmt:} \texttt{203.0.113.7}\\
+\textbf{Source of truth:} \textcolor{accent}{\textbf{not registered in the catalog}}\\
+\textcolor{darkgray}{36-port fabric switch; embedded SM.}
+
+\section{Workloads \& Placement}
+\begin{tabularx}{\textwidth}{l l l X}
+\toprule
+\textbf{Node} & \textbf{Workload} & \textbf{Kind} & \textbf{Resources} \\
+\midrule
+compute-a & Model inference & LLM serving & 4x Example GPU G1 \\
+compute-b & CPU batch & General compute & Example EPYC Z1 (64C) \\
+\bottomrule
+\end{tabularx}
+\subsection{Guests on Store}\begin{itemize}[nosep,leftmargin=1.4em]\item VM100 gateway (reverse proxy, 192.0.2.100)
+\item VM110 vm-a (running)
+\item VM111 vm-b (running)
+\item CT109 ct-b (stopped)
+\item CT114 netbox (running; 192.0.2.114)
+\end{itemize}
+\subsection{Guests on Compute-b}\begin{itemize}[nosep,leftmargin=1.4em]\item CT160 ct-a (stopped)
+\item VM200 builder (running)
+\end{itemize}
+
+\textcolor{accent}{Reconciliation note:} an operator-expected guest on Store is
+not yet registered in the catalog under that name.
+
+
+\section{System Topology}
+\begin{center}
+\begin{tikzpicture}[
+  node distance=7mm and 9mm,
+  box/.style={draw=secondary, thick, rounded corners=2pt, fill=lightgray!50,
+              align=center, font=\small, inner sep=5pt},
+  host/.style={box, fill=white, draw=primary, minimum width=33mm},
+  downhost/.style={host, draw=accent, dashed},
+  lbl/.style={font=\scriptsize\itshape, text=darkgray},
+]
+\node[box, fill=secondary, text=white, text width=64mm] (wan) {WAN\\\scriptsize 203.0.113.10-14/24 on edge; admin access via VPN};
+\node[host, below=of wan] (edge) {\textbf{Edge} \texttt{.1}\\\scriptsize Example Router R1};
+\node[host, below=14mm of edge, xshift=-52mm] (store) {\textbf{Store} \texttt{.3}\\\scriptsize ACME 2U Server\\\scriptsize 5 guests (3 VM, 2 CT)};
+\node[downhost, below=14mm of edge, xshift=0mm] (compute-a) {\textbf{Compute-A} \texttt{.4}\\\scriptsize 4$\times$G1\\\textcolor{accent}{\scriptsize\textbf{DOWN}}};
+\node[host, below=14mm of edge, xshift=52mm] (compute-b) {\textbf{Compute-B} \texttt{.5}\\\scriptsize Example Board X1\\\scriptsize 2$\times$G2\\\scriptsize 2 guests (1 VM, 1 CT)};
+\node[box, right=14mm of edge] (mgmt) {mgmt 203.0.113.0/24\\\scriptsize Store BMC 203.0.113.4 · Compute-A BMC 203.0.113.5 · Fabric-SW 203.0.113.7};
+\draw[thick, secondary, dashed] (edge) -- (mgmt);
+\draw[thick, secondary] (wan) -- (edge);
+\draw[thick, primary] (edge) -- (store) node[midway, lbl, above left] {LAN 192.0.2.0/24};
+\draw[thick, primary] (edge) -- (compute-a);
+\draw[thick, primary] (edge) -- (compute-b);
+\node[host, below=34mm of edge] (fabric-sw) {\textbf{Fabric-SW}\\\scriptsize Example Switch S1};
+\draw[very thick, dashed, success] (store) -- (fabric-sw) node[midway, lbl, below left] {IPoIB fabric 198.51.100.0/24};
+\draw[very thick, dashed, success] (compute-b) -- (fabric-sw);
+\end{tikzpicture}
+\end{center}
+
+Telemetry paths: the edge router exports IPFIX/NetFlow and syslog to the
+observability guests; the gateway exports NetFlow and syslog as well. Metrics
+and logs persist on the fabric-only service over the storage fabric.
+
+
+\section{Power \& Thermal}
+Tariff \textbf{\$0.15/kWh}, 720\,h accounting month. Figures are modeled
+from component TDPs — no PDU metering exists yet, so treat them as a sizing
+model, not a bill.
+
+\begin{tabularx}{\textwidth}{X r r r r}
+\toprule
+\textbf{Device} & \textbf{Typical (W)} & \textbf{Peak (W)} & \textbf{kWh/mo} & \textbf{USD/mo} \\
+\midrule
+Edge & 40 & 60 & 29 & \$4.32 \\
+Store & 150 & 250 & 108 & \$16.20 \\
+Compute-A \textcolor{accent}{(down)} & 1,280 & 2,000 & 922 & \$138.24 \\
+Compute-B & 950 & 1,375 & 684 & \$102.60 \\
+Fabric-SW & 130 & 231 & 94 & \$14.04 \\
+\midrule
+\textbf{All-on typical} & \textbf{2,550} & & 1,836 & \textbf{\$275.40} \\
+\textbf{Live today (Compute-A down)} & \textbf{1,270} & & 914 & \textbf{\$137.16} \\
+\textbf{Peak envelope} & & \textbf{3,916} & & \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Thermal load}
+Peak heat rejection 13,361\,BTU/h (1.11 tons refrigeration);
+Air-cooled, room ambient. All-on annual energy cost
+\textbf{\$3,305}.
+
+
+\section{Capital Expenditure}
+\textcolor{accent}{All line items are used-market estimates} entered to
+seed the model — replace with invoice values in \texttt{finance/capex.toml}
+(\texttt{basis = "invoice"}) as records are located.
+
+\begin{tabularx}{\textwidth}{l X r l}
+\toprule
+\textbf{Device} & \textbf{Item} & \textbf{USD} & \textbf{Basis} \\
+\midrule
+compute-a & 4x Example GPU G1 & \$4,800 & estimate \\
+compute-b & Example EPYC Z1 & \$1,600 & estimate \\
+compute-b & 2x Example GPU G2 & \$3,000 & estimate \\
+store & Storage node incl. disks & \$1,500 & invoice \\
+edge & Edge router & \$700 & estimate \\
+site & Fabric: HCAs, switch, cabling & \$800 & estimate \\
+\midrule
+\textbf{Total} & & \textbf{\$12,400} & \\
+\bottomrule
+\end{tabularx}
+
+At the all-on typical load, annual power (\$3,305) is
+27\,\% of the estimated fleet capex — energy dominates
+TCO within $\sim$3 years.
+
+
+\section{Control-Plane Architecture}
+Target shape and its current state:
+
+\begin{center}
+\begin{tikzpicture}[node distance=6mm, layer/.style={draw=primary, thick,
+  rounded corners=2pt, fill=lightgray!50, minimum width=118mm, align=center,
+  font=\small, inner sep=6pt}]
+\node[layer] (bs) {\textbf{Portal} --- catalog, search, docs, self-service, ownership\\\scriptsize \textcolor{success}{\textbf{LIVE}} (file-backed catalog)};
+\node[layer, below=of bs] (nb) {\textbf{NetBox + Git} --- desired state, assets, physical/logical topology\\\scriptsize \textcolor{accent}{\textbf{GAP}}: dedicated NetBox not yet deployed; Git-backed catalog only};
+\node[layer, below=of nb] (col) {\textbf{Collectors / Reconcilers} --- Proxmox, Redfish, LLDP, SNMP, PDU, Prometheus\\\scriptsize \textcolor{success}{\textbf{PARTIAL}}: Proxmox and Prometheus paths exist\\\scriptsize \textcolor{accent}{missing}: Redfish, LLDP, SNMP, PDU reconcilers};
+\draw[->, thick, secondary] (bs) -- (nb);
+\draw[->, thick, secondary] (nb) -- (col);
+\end{tikzpicture}
+\end{center}
+
+
+\section{Findings \& Recommended Actions}
+\begin{enumerate}[leftmargin=1.6em]
+\item \textbf{Compute-A is down and absent from the catalog.} Onboard it as a
+  \texttt{physical-host} resource and record whether the outage is intentional.
+  If it is deliberately powered off between jobs, that is worth
+  \$138/month at the current tariff --- record the
+  policy so the saving is attributable.
+\item \textbf{NetBox is missing from the source-of-truth layer.} Deploy a
+  dedicated instance (or formally de-scope it and promote the Git-backed
+  catalog).
+\item \textbf{No PDU metering.} Every power and thermal figure in this report
+  is modeled from TDPs. Metered sockets or a PDU with SNMP would turn the
+  power section into billing-grade data.
+\item \textbf{Reconciler gaps.} Redfish, LLDP, SNMP, and PDU collectors are
+  not yet evidenced. Prioritize Redfish (fills Store's unknown hardware spec)
+  and PDU.
+\item \textbf{Fabric-svc is unverifiable from the LAN.} Add a fabric-attached
+  probe so the fabric-only service is itself observable.
+\end{enumerate}
+
+\end{document}

@@ -1,0 +1,37 @@
+name: CI
+
+# The merge gate: the same `make ci` an operator runs locally (fmt, clippy
+# -D warnings, tests, doc, release build). Everything it needs is committed —
+# tests read synthetic fixtures vendored in-tree — so it runs on a cloud
+# runner with no fleet access and no secrets.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A newer push to a branch supersedes an in-flight run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust (stable; edition 2024 needs >= 1.85)
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt,clippy
+          rustup default stable
+          rustc --version
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+
+      - name: make ci
+        run: make ci

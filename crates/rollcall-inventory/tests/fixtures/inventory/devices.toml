@@ -1,0 +1,99 @@
+# Synthetic device inventory for tests. One [[device]] per chassis.
+# Power figures are TDP-modeled (power_estimate = true).
+
+[[device]]
+id = "edge"
+name = "Edge"
+role = "Edge router"
+model = "Example Router R1"
+ip_lan = "192.0.2.1"
+ip_fabric = "198.51.100.1"
+ssh = "reconciler@192.0.2.1"
+collector = "routeros"
+motherboard = "Example Router R1"
+cpu_model = "ARM64"
+ram_gb = 4
+power_typical_w = 40
+power_peak_w = 60
+power_estimate = true
+source_of_truth = "none"
+notes = "Firmware upgrade pending."
+
+[[device]]
+id = "store"
+name = "Store"
+role = "Storage + platform services host (Proxmox VE)"
+ip_lan = "192.0.2.3"
+ip_fabric = "198.51.100.3"
+ssh = "reconciler@192.0.2.3"
+motherboard = "ACME 2U Server"
+cpu = "2x Example CPU E1 (14C/28T each)"
+cpu_model = "Example CPU E1"
+ram_gb = 128
+fabric_hca = "Example HCA H3"
+disks = [
+  "Example SSD 512GB",
+  "Example HDD 2TB",
+]
+power_typical_w = 150
+power_peak_w = 250
+power_estimate = true
+source_of_truth = "none"
+bmc = "BMC 203.0.113.4"
+notes = "Serves the storage LUN the compute node mounts."
+
+[[device]]
+id = "compute-a"
+name = "Compute-A"
+role = "GPU inference node"
+ip_lan = "192.0.2.4"
+cpu = "2x Example CPU P1 (28C/56T each)"
+cpu_model = "Example CPU P1"
+ram_gb = 128
+bmc = "BMC 203.0.113.5"
+power_typical_w = 1280
+power_peak_w = 2000
+power_estimate = true
+source_of_truth = "none"
+
+  [[device.accelerator]]
+  model = "Example GPU G1"
+  count = 4
+  power_each_w = 300
+
+[[device]]
+id = "compute-b"
+name = "Compute-B"
+role = "Mixed compute node (Proxmox VE)"
+ip_lan = "192.0.2.5"
+ip_fabric = "198.51.100.5"
+ssh = "reconciler@192.0.2.5"
+motherboard = "Example Board X1"
+cpu = "Example EPYC Z1 (64C/128T)"
+cpu_model = "Example EPYC Z1"
+ram_gb = 512
+fabric_hca = "Example HCA H3"
+disks = [
+  "Example NVMe 2TB",
+]
+power_typical_w = 950
+power_peak_w = 1375
+power_estimate = true
+source_of_truth = "none"
+
+  [[device.accelerator]]
+  model = "Example GPU G2"
+  count = 2
+  power_each_w = 450
+
+[[device]]
+id = "fabric-sw"
+name = "Fabric-SW"
+role = "Fabric switch (embedded subnet manager)"
+model = "Example Switch S1"
+ip_mgmt = "203.0.113.7"
+power_typical_w = 130
+power_peak_w = 231
+power_estimate = true
+source_of_truth = "none"
+notes = "36-port fabric switch; embedded SM."

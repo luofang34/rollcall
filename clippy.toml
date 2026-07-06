@@ -1,0 +1,5 @@
+# Library crates use typed thiserror enums; anyhow is reserved for the CLI
+# binary, which carries its own overriding clippy.toml (nearest file wins).
+disallowed-types = [
+    { path = "anyhow::Error", reason = "library crates return typed errors; anyhow only in the CLI binary" },
+]

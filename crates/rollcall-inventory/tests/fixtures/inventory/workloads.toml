@@ -1,0 +1,90 @@
+# Synthetic workloads and guest placement for tests.
+
+[[workload]]
+node = "compute-a"
+name = "Model inference"
+kind = "LLM serving"
+resources = "4x Example GPU G1"
+
+[[workload]]
+node = "compute-b"
+name = "CPU batch"
+kind = "General compute"
+resources = "Example EPYC Z1 (64C)"
+
+# ---- Guest placement --------------------------------------------------------
+
+[[guest]]
+host = "store"
+guests = [
+  "VM100 gateway (reverse proxy, 192.0.2.100)",
+  "VM110 vm-a (running)",
+  "VM111 vm-b (running)",
+  "CT109 ct-b (stopped)",
+  "CT114 netbox (running; 192.0.2.114)",
+]
+
+[[guest]]
+host = "compute-b"
+guests = [
+  "CT160 ct-a (stopped)",
+  "VM200 builder (running)",
+]
+
+# ---- Typed guest registry ---------------------------------------------------
+# One row per VM/CT: the single declared source for VMID / IP / placement.
+
+[[guest_record]]
+vmid = 100
+name = "gateway"
+host = "store"
+kind = "vm"
+ip_lan = "192.0.2.100"
+status = "running"
+notes = "Reverse proxy / firewall."
+
+[[guest_record]]
+vmid = 110
+name = "vm-a"
+host = "store"
+kind = "vm"
+ip_lan = "192.0.2.110"
+ip_assignment = "declared"
+status = "running"
+notes = "Static IP declared in the guest OS config and enforced independently of DHCP."
+
+[[guest_record]]
+vmid = 111
+name = "vm-b"
+host = "store"
+kind = "vm"
+ip_lan = "192.0.2.111"
+ip_assignment = "declared"
+status = "running"
+notes = "Static IP declared and enforced; verified live on-host."
+
+[[guest_record]]
+vmid = 109
+name = "ct-b"
+host = "store"
+kind = "ct"
+ip_lan = "192.0.2.109"
+status = "stopped"
+notes = "Renumbered so its LAN IP matches the VMID convention."
+
+[[guest_record]]
+vmid = 114
+name = "netbox"
+host = "store"
+kind = "ct"
+ip_lan = "192.0.2.114"
+ip_assignment = "declared"
+status = "running"
+notes = "First claim-before-creation row: the identity is reserved before the guest exists."
+
+[[guest_record]]
+vmid = 160
+name = "ct-a"
+host = "compute-b"
+kind = "ct"
+status = "stopped"

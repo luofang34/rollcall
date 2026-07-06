@@ -1,0 +1,14 @@
+\section{Control-Plane Architecture}
+Target shape and its current state:
+
+\begin{center}
+\begin{tikzpicture}[node distance=6mm, layer/.style={draw=primary, thick,
+  rounded corners=2pt, fill=lightgray!50, minimum width=118mm, align=center,
+  font=\small, inner sep=6pt}]
+\node[layer] (bs) {\textbf{Portal} --- catalog, search, docs, self-service, ownership\\\scriptsize \textcolor{success}{\textbf{LIVE}} (file-backed catalog)};
+\node[layer, below=of bs] (nb) {\textbf{NetBox + Git} --- desired state, assets, physical/logical topology\\\scriptsize \textcolor{accent}{\textbf{GAP}}: dedicated NetBox not yet deployed; Git-backed catalog only};
+\node[layer, below=of nb] (col) {\textbf{Collectors / Reconcilers} --- Proxmox, Redfish, LLDP, SNMP, PDU, Prometheus\\\scriptsize \textcolor{success}{\textbf{PARTIAL}}: Proxmox and Prometheus paths exist\\\scriptsize \textcolor{accent}{missing}: Redfish, LLDP, SNMP, PDU reconcilers};
+\draw[->, thick, secondary] (bs) -- (nb);
+\draw[->, thick, secondary] (nb) -- (col);
+\end{tikzpicture}
+\end{center}

@@ -1,0 +1,35 @@
+{
+  "generated_at": "2026-07-02T22:14:03.512004-04:00",
+  "results": [
+    {
+      "id": "edge",
+      "desc": "Edge router",
+      "state": "up",
+      "detail": "icmp reply"
+    },
+    {
+      "id": "store",
+      "desc": "Store (Proxmox host)",
+      "state": "up",
+      "detail": "icmp reply"
+    },
+    {
+      "id": "compute-a",
+      "desc": "Compute-A (GPU node)",
+      "state": "up",
+      "detail": "icmp reply"
+    },
+    {
+      "id": "gateway",
+      "desc": "Gateway reverse proxy",
+      "state": "up",
+      "detail": "HTTP 302"
+    },
+    {
+      "id": "fabric-svc",
+      "desc": "Fabric-only service (CT160)",
+      "state": "unverifiable",
+      "detail": "no icmp reply"
+    }
+  ]
+}

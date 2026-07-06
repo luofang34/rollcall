@@ -1,0 +1,44 @@
+# Synthetic status probes for tests. kind = "icmp" (ping) or "http" (GET).
+#
+# The fabric-only service has no LAN address, so it carries
+# lan_reachable = false and a failure is reported "unverifiable", not "down".
+
+[[probe]]
+id = "edge"
+desc = "Edge router"
+kind = "icmp"
+target = "192.0.2.1"
+
+[[probe]]
+id = "store"
+desc = "Store (Proxmox host)"
+kind = "icmp"
+target = "192.0.2.3"
+
+[[probe]]
+id = "store-pve"
+desc = "Store Proxmox VE API"
+kind = "http"
+url = "https://192.0.2.3:8006/"
+expect = [200]
+insecure = true
+
+[[probe]]
+id = "compute-a"
+desc = "Compute-A (GPU node)"
+kind = "icmp"
+target = "192.0.2.4"
+
+[[probe]]
+id = "gateway"
+desc = "Gateway reverse proxy (drops ICMP, probe HTTP)"
+kind = "http"
+url = "http://192.0.2.100/"
+expect = [200, 301, 302]
+
+[[probe]]
+id = "fabric-svc"
+desc = "Fabric-only service (CT160)"
+kind = "icmp"
+target = "198.51.100.160"
+lan_reachable = false

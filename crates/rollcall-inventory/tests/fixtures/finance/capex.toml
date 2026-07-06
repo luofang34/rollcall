@@ -1,0 +1,37 @@
+# Synthetic capex ledger for tests. basis = "estimate" until an invoice lands.
+
+[[item]]
+device = "compute-a"
+desc = "4x Example GPU G1"
+usd = 4800
+basis = "estimate"
+
+[[item]]
+device = "compute-b"
+desc = "Example EPYC Z1"
+usd = 1600
+basis = "estimate"
+
+[[item]]
+device = "compute-b"
+desc = "2x Example GPU G2"
+usd = 3000
+basis = "estimate"
+
+[[item]]
+device = "store"
+desc = "Storage node incl. disks"
+usd = 1500
+basis = "invoice"
+
+[[item]]
+device = "edge"
+desc = "Edge router"
+usd = 700
+basis = "estimate"
+
+[[item]]
+device = "site"
+desc = "Fabric: HCAs, switch, cabling"
+usd = 800
+basis = "estimate"

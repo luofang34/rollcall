@@ -1,0 +1,2 @@
+# Overrides the workspace clippy.toml (nearest file wins, no merging):
+# the CLI binary is the one place anyhow::Error is allowed.

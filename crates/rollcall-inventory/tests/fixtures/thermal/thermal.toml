@@ -1,0 +1,10 @@
+# Synthetic thermal model assumptions for tests. Heat load derives from the
+# device power figures (1 W electrical -> 3.412 BTU/h).
+
+[cooling]
+method = "Air-cooled, room ambient"
+btu_per_watt_hour = 3.412
+ton_refrigeration_btu_h = 12000
+
+[assumptions]
+note = "No CRAC/PDU telemetry yet; validate against measured intake/exhaust temps when sensors land."

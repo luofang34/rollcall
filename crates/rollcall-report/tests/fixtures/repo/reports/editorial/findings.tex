@@ -1,0 +1,19 @@
+\section{Findings \& Recommended Actions}
+\begin{enumerate}[leftmargin=1.6em]
+\item \textbf{Compute-A is down and absent from the catalog.} Onboard it as a
+  \texttt{physical-host} resource and record whether the outage is intentional.
+  If it is deliberately powered off between jobs, that is worth
+  \$@@device_usd_per_month:Compute-A@@/month at the current tariff --- record the
+  policy so the saving is attributable.
+\item \textbf{NetBox is missing from the source-of-truth layer.} Deploy a
+  dedicated instance (or formally de-scope it and promote the Git-backed
+  catalog).
+\item \textbf{No PDU metering.} Every power and thermal figure in this report
+  is modeled from TDPs. Metered sockets or a PDU with SNMP would turn the
+  power section into billing-grade data.
+\item \textbf{Reconciler gaps.} Redfish, LLDP, SNMP, and PDU collectors are
+  not yet evidenced. Prioritize Redfish (fills Store's unknown hardware spec)
+  and PDU.
+\item \textbf{Fabric-svc is unverifiable from the LAN.} Add a fabric-attached
+  probe so the fabric-only service is itself observable.
+\end{enumerate}
