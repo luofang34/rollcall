@@ -70,6 +70,11 @@ pub struct Device {
     /// True while power figures are TDP-modeled rather than PDU-measured.
     #[serde(default)]
     pub power_estimate: bool,
+    /// True when the device is deliberately kept offline (e.g. a GPU node
+    /// between inference jobs); a down probe for it is expected, not an
+    /// incident, and the risk register rates it as low.
+    #[serde(default)]
+    pub expected_offline: bool,
     /// Source-of-truth catalog entity, or `"none"` to flag an onboarding gap.
     pub source_of_truth: Option<String>,
     /// Free-form operator note.

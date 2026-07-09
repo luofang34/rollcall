@@ -32,3 +32,26 @@ fn parses_fixture_devices_file() {
         );
     }
 }
+
+#[test]
+fn expected_offline_defaults_false_and_parses_true() {
+    let toml = r#"
+        [[device]]
+        id = "sibyl"
+        name = "Sibyl"
+        role = "GPU node"
+        power_typical_w = 100
+        power_peak_w = 200
+        expected_offline = true
+
+        [[device]]
+        id = "seshat"
+        name = "Seshat"
+        role = "host"
+        power_typical_w = 100
+        power_peak_w = 200
+    "#;
+    let devices: crate::devices::DevicesFile = ::toml::from_str(toml).expect("parses");
+    assert!(devices.device[0].expected_offline);
+    assert!(!devices.device[1].expected_offline, "absent -> false");
+}

@@ -106,13 +106,29 @@ fn assess(provider: &dyn NarrativeProvider, context: &str) -> Vec<Risk> {
     risks
 }
 
+/// True when a probe's target device (joined by id) is declared
+/// `expected_offline` — a down state for it is by design, not a fault.
+fn is_expected_offline(inputs: &ReportInputs, probe_id: &str) -> bool {
+    inputs
+        .devices
+        .device
+        .iter()
+        .any(|device| device.id == probe_id && device.expected_offline)
+}
+
 /// Builds the computed problem/gap context from real data. The model ranks and
 /// phrases; every line here is a fact rollcall observed or declared.
 fn problem_context(inputs: &ReportInputs) -> String {
     let mut items: Vec<String> = Vec::new();
     for result in &inputs.snapshot.results {
         match result.state {
-            ProbeState::Down => items.push(format!("{} is DOWN ({})", result.desc, result.detail)),
+            ProbeState::Down if is_expected_offline(inputs, &result.id) => items.push(format!(
+                "{} is down, but deliberately offline — expected, not an incident",
+                result.desc
+            )),
+            ProbeState::Down => {
+                items.push(format!("{} is DOWN ({})", result.desc, result.detail));
+            }
             ProbeState::Unverifiable => {
                 items.push(format!("{} is UNVERIFIABLE from the LAN", result.desc));
             }
