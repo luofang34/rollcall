@@ -33,7 +33,10 @@ pub fn render_document_blocking(
     let digest = narrative::fleet_digest(inputs, &values);
     let fragment = |name: &str| -> Result<String, ReportError> {
         if let Some(prose) = narrative::render_section(mode, provider, name, &digest) {
-            let tex = esc(&prose);
+            // Trailing newline so the prose is its own paragraph: an authored
+            // fragment file ends with one, and a section whose note precedes a
+            // table needs that break or the table sets inline (overflowing).
+            let tex = format!("{}\n", esc(&prose));
             if mode == NarrateMode::Draft {
                 narrative::write_fragment_blocking(editorial_dir, name, &tex)?;
             }
