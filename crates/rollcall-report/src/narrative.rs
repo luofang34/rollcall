@@ -36,6 +36,13 @@ pub trait NarrativeProvider {
     /// `context`. Returns `None` to fall back to the authored fragment.
     fn draft(&self, section: &str, instruction: &str, context: &str) -> Option<String>;
 
+    /// Draft a JSON response conforming to `schema`, grounded only in
+    /// `context`. Returns `None` when the provider does no structured output;
+    /// prose-only providers keep this default.
+    fn draft_json(&self, _instruction: &str, _context: &str, _schema: &str) -> Option<String> {
+        None
+    }
+
     /// A short human-readable name, for the note announcing narration.
     fn name(&self) -> &str;
 }
@@ -89,6 +96,34 @@ impl NarrativeProvider for AppleFm {
         }
         let prose = clean(&String::from_utf8_lossy(&output.stdout));
         (!prose.is_empty()).then_some(prose)
+    }
+
+    fn draft_json(&self, instruction: &str, context: &str, schema: &str) -> Option<String> {
+        // fm reads the schema from a file; write it beside the process id so
+        // concurrent runs don't collide, and remove it after.
+        let schema_path =
+            std::env::temp_dir().join(format!("rollcall-schema-{}.json", std::process::id()));
+        std::fs::write(&schema_path, schema).ok()?;
+        let output = Command::new("fm")
+            .args([
+                "respond",
+                "--greedy",
+                "--no-stream",
+                "--model",
+                "system",
+                "--schema",
+            ])
+            .arg(&schema_path)
+            .args(["--instructions", instruction, "--text", context])
+            .arg("Generate the structured result.")
+            .output();
+        std::fs::remove_file(&schema_path).ok();
+        let output = output.ok()?;
+        if !output.status.success() {
+            return None;
+        }
+        let json = String::from_utf8_lossy(&output.stdout).trim().to_owned();
+        (!json.is_empty()).then_some(json)
     }
 }
 
@@ -154,7 +189,7 @@ pub fn render_section(
 /// digest holds every real number, so a digit-figure absent from it is a
 /// fabrication. Word-numbers ("fifteen") are not checked — only digit figures.
 #[must_use]
-fn is_grounded(prose: &str, context: &str) -> bool {
+pub(crate) fn is_grounded(prose: &str, context: &str) -> bool {
     let allowed: std::collections::BTreeSet<String> = numbers(context).collect();
     numbers(prose).all(|figure| allowed.contains(&figure))
 }

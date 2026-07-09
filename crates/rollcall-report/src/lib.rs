@@ -13,6 +13,7 @@ mod error;
 pub mod inputs;
 pub mod narrative;
 pub mod power;
+pub mod risk;
 pub mod sections;
 pub mod tex;
 
@@ -22,3 +23,4 @@ pub use error::ReportError;
 pub use inputs::{ReportInputs, load_inputs_blocking};
 pub use narrative::{AppleFm, NarrateMode, NarrativeProvider};
 pub use power::{PowerModel, PowerRow, power_model};
+pub use risk::{Risk, Severity};

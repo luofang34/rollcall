@@ -9,6 +9,7 @@ use crate::error::ReportError;
 use crate::inputs::ReportInputs;
 use crate::narrative::{self, NarrateMode, NarrativeProvider};
 use crate::power::{PowerModel, power_model, usd_per_month};
+use crate::risk;
 use crate::sections;
 use crate::tex::{esc, fmt_sep};
 
@@ -61,10 +62,11 @@ pub fn render_document_blocking(
     let capex = sections::capex_section(&inputs.capex, &model, &inputs.site);
     let architecture = fragment("architecture.tex")?;
     let findings = fragment("findings.tex")?;
+    let risk_register = risk::render(&risk::generate_blocking(provider, inputs));
     let preamble = preamble(&inputs.site, &inputs.status_date, number);
 
     Ok(format!(
-        "{preamble}\\fleetheading{{Executive Summary}}\n{exec}\n{status}\n{devices}\n{workloads}\n{topology}\n{power}\n{capex}\n\n{architecture}\n\n{findings}\n\\end{{document}}\n"
+        "{preamble}\\fleetheading{{Executive Summary}}\n{exec}\n{status}\n{devices}\n{workloads}\n{topology}\n{power}\n{capex}\n\n{architecture}\n\n{findings}\n{risk_register}\\end{{document}}\n"
     ))
 }
 
