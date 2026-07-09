@@ -4,7 +4,7 @@
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result};
 use clap::{Args, Subcommand};
 
 use crate::output::print_to_stdout;
@@ -44,6 +44,14 @@ struct PullArgs {
     /// File holding the read-only reconciler API token.
     #[arg(long, value_name = "FILE")]
     token_file: Option<PathBuf>,
+
+    /// Override the NetBox base URL, winning over inventory/site.toml's
+    /// `netbox_url`. The reconciler sets this (or the `NETBOX_URL` env var) to
+    /// the loopback address so its API traffic — and thus the read-only
+    /// token's allowed-IPs scope — never depends on the CT's externally
+    /// routable address.
+    #[arg(long, value_name = "URL", env = "NETBOX_URL")]
+    url: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -183,24 +191,38 @@ fn first_logical_diff(before: &serde_json::Value, after: &serde_json::Value) -> 
     ("<none>".to_owned(), "<none>".to_owned())
 }
 
+/// Resolve the NetBox base URL for a pull: an explicit `--url` / `NETBOX_URL`
+/// override wins; otherwise fall back to inventory/site.toml's `netbox_url`.
+fn resolve_pull_url(override_url: Option<&str>, site_netbox_url: Option<String>) -> Result<String> {
+    override_url.map(str::to_owned).or(site_netbox_url).context(
+        "no [services] netbox_url in inventory/site.toml — declare the NetBox instance first, or pass --url",
+    )
+}
+
 fn pull_blocking(args: &PullArgs) -> Result<ExitCode> {
     let repo = match &args.repo {
         Some(path) => path.clone(),
         None => discover_repo_root_blocking()?,
     };
-    let site = rollcall_inventory::load_site_blocking(&repo.join("inventory").join("site.toml"))?;
-    let Some(services) = &site.services else {
-        bail!(
-            "no [services] netbox_url in inventory/site.toml — declare the NetBox instance first"
-        );
+    // Load site.toml only when there is no override — the reconciler runs
+    // with an explicit --url and must not depend on the committed netbox_url.
+    let site_netbox_url = match &args.url {
+        Some(_) => None,
+        None => {
+            let site =
+                rollcall_inventory::load_site_blocking(&repo.join("inventory").join("site.toml"))?;
+            site.services.map(|s| s.netbox_url)
+        }
     };
+    let url = resolve_pull_url(args.url.as_deref(), site_netbox_url)?;
+
     let token_path = match &args.token_file {
         Some(path) => path.clone(),
         None => default_token_path()?,
     };
     let token = rollcall_netbox::read_token_blocking(&token_path)?;
 
-    let document = rollcall_netbox::pull_blocking(&services.netbox_url, &token)?;
+    let document = rollcall_netbox::pull_blocking(&url, &token)?;
     let mut summary = String::new();
     if let Some(map) = document.as_object() {
         use std::fmt::Write as _;
@@ -233,3 +255,6 @@ fn default_token_path() -> Result<PathBuf> {
         .join("fleet")
         .join("netbox-token"))
 }
+
+#[cfg(test)]
+mod tests;
