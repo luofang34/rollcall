@@ -102,6 +102,10 @@ fn adapt_devices(escrow: &Value) -> Vec<Device> {
                 .get("power_estimate")
                 .and_then(Value::as_bool)
                 .unwrap_or(false),
+            expected_offline: cf
+                .get("expected_offline")
+                .and_then(Value::as_bool)
+                .unwrap_or(false),
             source_of_truth: None,
             notes: str_field(d, "comments").filter(|s| !s.is_empty()),
             accelerator: device_id

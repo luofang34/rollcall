@@ -11,6 +11,13 @@ fn esc_escapes_specials_without_double_escaping() {
 }
 
 #[test]
+fn esc_maps_glyphless_unicode_to_math_symbols() {
+    // The mapped `$` must not be re-escaped to `\$`.
+    assert_eq!(esc("login → 302"), r"login $\rightarrow$ 302");
+    assert_eq!(esc("2.55 kW ≈ cost"), r"2.55 kW $\approx$ cost");
+}
+
+#[test]
 fn fmt_sep_matches_python_comma_format() {
     assert_eq!(fmt_sep(555.12, 2), "555.12");
     assert_eq!(fmt_sep(1850.4, 0), "1,850");

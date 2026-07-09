@@ -4,8 +4,11 @@
 
 use rollcall_status::ProbeState;
 
-/// Escapes LaTeX-special characters in data-derived text.
-/// Backslash first, so escapes this introduces are not re-escaped.
+/// Escapes LaTeX-special characters in data-derived text, and maps the few
+/// Unicode symbols that recur in probe/device prose but have no glyph in the
+/// report font (they would render as a tofu box). Backslash is escaped first
+/// so escapes this introduces are not re-escaped; the symbol maps run last so
+/// the `$` and `\` they insert are left intact.
 pub fn esc(s: &str) -> String {
     let mut out = s.to_owned();
     for (from, to) in [
@@ -16,6 +19,10 @@ pub fn esc(s: &str) -> String {
         ("_", r"\_"),
         ("$", r"\$"),
         ("~", r"\~{}"),
+        ("→", r"$\rightarrow$"),
+        ("←", r"$\leftarrow$"),
+        ("↔", r"$\leftrightarrow$"),
+        ("≈", r"$\approx$"),
     ] {
         out = out.replace(from, to);
     }
