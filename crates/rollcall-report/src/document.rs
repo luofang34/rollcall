@@ -7,20 +7,40 @@ use std::path::Path;
 use crate::editorial::render_fragment_blocking;
 use crate::error::ReportError;
 use crate::inputs::ReportInputs;
+use crate::narrative::{self, NarrateMode, NarrativeProvider};
 use crate::power::{PowerModel, power_model, usd_per_month};
 use crate::sections;
 use crate::tex::{esc, fmt_sep};
 
 /// Renders the complete LaTeX document. Blocks on reading the editorial
 /// fragments under `editorial_dir`.
+///
+/// `mode` and `provider` govern narration: in [`NarrateMode::Auto`] or
+/// [`NarrateMode::Draft`] each status-driven prose section is drafted by
+/// `provider` from a computed digest, falling back to the authored fragment
+/// when there is no provider or it declines; [`NarrateMode::Off`] always
+/// renders the authored fragments. [`NarrateMode::Draft`] also writes the
+/// drafted prose back into the fragment files.
 pub fn render_document_blocking(
     inputs: &ReportInputs,
     editorial_dir: &Path,
     number: &str,
+    mode: NarrateMode,
+    provider: Option<&dyn NarrativeProvider>,
 ) -> Result<String, ReportError> {
     let model = power_model(&inputs.devices, &inputs.site, &inputs.snapshot);
     let values = placeholder_values(inputs, &model);
-    let fragment = |name: &str| render_fragment_blocking(editorial_dir, name, &values);
+    let digest = narrative::fleet_digest(inputs, &values);
+    let fragment = |name: &str| -> Result<String, ReportError> {
+        if let Some(prose) = narrative::render_section(mode, provider, name, &digest) {
+            let tex = esc(&prose);
+            if mode == NarrateMode::Draft {
+                narrative::write_fragment_blocking(editorial_dir, name, &tex)?;
+            }
+            return Ok(tex);
+        }
+        render_fragment_blocking(editorial_dir, name, &values)
+    };
 
     let exec = fragment("executive-summary.tex")?;
     let status = sections::status_section(&inputs.snapshot, &fragment("status-note.tex")?);

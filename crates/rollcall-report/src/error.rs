@@ -67,6 +67,15 @@ pub enum ReportError {
         /// Fragment path.
         path: PathBuf,
     },
+    /// A drafted editorial fragment could not be written (`--narrate=draft`).
+    #[error("failed to write drafted editorial fragment {path}")]
+    WriteFragment {
+        /// Fragment path.
+        path: PathBuf,
+        /// Underlying I/O error.
+        #[source]
+        source: std::io::Error,
+    },
     /// An output directory could not be created.
     #[error("failed to create {path}")]
     CreateDir {
