@@ -99,26 +99,30 @@ impl NarrativeProvider for AppleFm {
 pub fn instruction_for(fragment: &str) -> Option<&'static str> {
     let instruction = match fragment {
         "executive-summary.tex" => {
-            "You are a precise datacenter operations analyst. Using ONLY the digest, write a 3-4 \
-             sentence executive summary: probe health, any down hosts, and the modeled power and \
-             monthly cost. Plain prose only — no title, no markdown, no lists."
+            "You are a senior SRE. Using ONLY the digest, write a 3-4 sentence executive summary. \
+             Lead with overall health, then any down host, then the modeled power and monthly \
+             cost. A node that is down deliberately is expected — say so, do not call it an \
+             incident. Be specific, no generic filler, no title, no markdown, no lists."
         }
         "status-note.tex" => {
             "Using ONLY the digest, write 1-2 plain sentences interpreting the probe status: what \
-             is up, what is down, and any implication. No title, no markdown."
+             is up, what is down, and whether it implies a real problem. A deliberately-down node \
+             is expected, not a problem. No title, no markdown."
         }
         "workloads-note.tex" => {
-            "Using ONLY the digest, write 1-2 plain sentences on how the guests are distributed \
-             across the hosts. No title, no markdown."
+            "Using ONLY the digest, write 1-2 plain sentences on how the guests concentrate across \
+             the hosts (which host carries most). No title, no markdown."
         }
         "topology-note.tex" => {
-            "Using ONLY the digest, write 1-2 plain sentences on the fleet's hosts and their \
-             roles. No title, no markdown."
+            "Using ONLY the digest, write 1-2 plain sentences on the hosts and their roles (router, \
+             compute, GPU, fabric). Do NOT restate guest counts. No title, no markdown."
         }
         "findings.tex" => {
-            "You are a datacenter operations analyst. Using ONLY the digest, write 2-4 sentences \
-             of findings about the fleet's current state and gaps, as flowing prose (not a list). \
-             No title, no markdown."
+            "You are a senior SRE. Using ONLY the digest, write 2-4 sentences of findings: \
+             outages, unverified or missing data, and gaps (missing collectors, pending capex, \
+             absent credentials). Do NOT restate per-host guest counts or power figures — the \
+             tables cover those. Be specific and cite the fact. A deliberately-down node is \
+             expected, not a finding. No title, no markdown, no lists."
         }
         _ => return None,
     };
@@ -139,7 +143,30 @@ pub fn render_section(
         return None;
     }
     let instruction = instruction_for(fragment)?;
-    provider?.draft(fragment, instruction, digest)
+    let prose = provider?.draft(fragment, instruction, digest)?;
+    // Guardrail: the digest carries every real figure, so a number in the
+    // draft that is not in the digest is invented — reject it and fall back to
+    // the authored fragment rather than ship a fabricated statistic.
+    is_grounded(&prose, digest).then_some(prose)
+}
+
+/// True when every numeric figure in `prose` also appears in `context`. The
+/// digest holds every real number, so a digit-figure absent from it is a
+/// fabrication. Word-numbers ("fifteen") are not checked — only digit figures.
+#[must_use]
+fn is_grounded(prose: &str, context: &str) -> bool {
+    let allowed: std::collections::BTreeSet<String> = numbers(context).collect();
+    numbers(prose).all(|figure| allowed.contains(&figure))
+}
+
+/// Extracts numeric figures as normalized strings: thousands separators
+/// removed and a trailing decimal point dropped, so `$1,850` yields `1850` and
+/// `2.55` yields `2.55`.
+fn numbers(text: &str) -> impl Iterator<Item = String> + '_ {
+    text.split(|c: char| !c.is_ascii_digit() && c != ',' && c != '.')
+        .filter(|token| token.chars().any(|c| c.is_ascii_digit()))
+        .map(|token| token.replace(',', "").trim_matches('.').to_owned())
+        .filter(|token| !token.is_empty())
 }
 
 /// Writes drafted, LaTeX-ready prose back into an editorial fragment (used in
