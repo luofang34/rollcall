@@ -1,7 +1,7 @@
 #![allow(clippy::expect_used, clippy::panic)]
 
 use super::{
-    NarrateMode, NarrativeProvider, clean, format_digest, instruction_for, render_section,
+    NarrateMode, NarrativeProvider, clean, format_digest, instruction_for, numbers, render_section,
 };
 
 /// A provider that always drafts fixed prose.
@@ -63,6 +63,39 @@ fn auto_narrates_narratable_sections_but_not_authored_ones() {
 #[test]
 fn a_declining_provider_falls_back() {
     assert!(render_section(NarrateMode::Auto, Some(&Silent), "findings.tex", "d").is_none());
+}
+
+#[test]
+fn a_draft_with_an_invented_figure_falls_back() {
+    // The digest never says 99; a draft claiming it is a fabrication -> reject.
+    let liar = Fake("All 99 hosts are operational.");
+    assert!(
+        render_section(
+            NarrateMode::Auto,
+            Some(&liar),
+            "findings.tex",
+            "3 hosts, 15 of 17 up"
+        )
+        .is_none()
+    );
+}
+
+#[test]
+fn a_draft_whose_figures_are_all_in_the_digest_passes() {
+    let honest = Fake("15 of 17 up across 3 hosts.");
+    let got = render_section(
+        NarrateMode::Auto,
+        Some(&honest),
+        "findings.tex",
+        "3 hosts, 15 of 17 up",
+    );
+    assert_eq!(got.as_deref(), Some("15 of 17 up across 3 hosts."));
+}
+
+#[test]
+fn numbers_normalizes_separators_and_extracts_figures() {
+    let got: Vec<String> = numbers("$1,850/mo, 2.55 kW, 15 of 17").collect();
+    assert_eq!(got, ["1850", "2.55", "15", "17"]);
 }
 
 #[test]
